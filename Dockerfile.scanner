@@ -1,0 +1,32 @@
+# Use an Ubuntu base image
+FROM ubuntu:20.04
+
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    golang \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Syft
+RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+# Install OSV Scanner
+RUN curl -L https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o /usr/local/bin/osv-scanner && \
+    chmod +x /usr/local/bin/osv-scanner
+
+# Set up a workspace
+WORKDIR /workspace
+
+# Copy the scanning script
+COPY scan_vulnerabilities.sh /workspace/
+
+# Make the script executable
+RUN chmod +x /workspace/scan_vulnerabilities.sh
+
+# Set the entry point to the scanning script
+ENTRYPOINT ["/workspace/scan_vulnerabilities.sh"]
